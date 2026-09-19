@@ -1,0 +1,37 @@
+{
+  "title": "AreTomo3, community-maintained build (kyledent/AreTomo3)",
+  "upload_type": "software",
+  "description": "<p><strong>Community build, not an official AreTomo3 release.</strong> This archive is a release of the kyledent/AreTomo3 fork of czimaginginstitute/AreTomo3. The AreTomo3 authors did not produce or review it. The AreTomo3 algorithms are upstream's.</p><p>The fork adds build fixes (makefile source lists, position-independent support libraries, Blackwell GPU targets), continuous integration, and release tooling.</p><p><strong>AI disclosure (Claude-CoI).</strong> The fork's changes were prepared with the assistance of Claude (Anthropic), an AI model, and released by the fork's maintainer.</p><p>To cite AreTomo3 itself, cite Peck et al. (2026), Nature Methods, doi:10.1038/s41592-026-03093-y.</p>",
+  "creators": [
+    {
+      "name": "Dent, Kyle",
+      "affiliation": "Diamond Light Source",
+      "orcid": "0009-0002-5228-7739"
+    }
+  ],
+  "license": "bsd-3-clause",
+  "keywords": [
+    "cryo-electron tomography",
+    "cryo-ET",
+    "tilt-series alignment",
+    "tomographic reconstruction",
+    "motion correction",
+    "CTF estimation",
+    "CUDA",
+    "Claude-CoI"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/czimaginginstitute/AreTomo3",
+      "relation": "isDerivedFrom",
+      "resource_type": "software"
+    },
+    {
+      "identifier": "10.1038/s41592-026-03093-y",
+      "relation": "references",
+      "resource_type": "publication-article",
+      "scheme": "doi"
+    }
+  ],
+  "notes": "Tag scheme v<upstream version>-community-Claude-CoI.<n>. Binaries and a container image for each release are on the GitHub release page and GHCR, not in this archive."
+}

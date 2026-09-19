@@ -1,0 +1,174 @@
+name: Release
+
+# Push a tag such as v2.3.2-community-Claude-CoI.1 to build release binaries
+# for each CUDA major version, attest their build provenance, publish a GitHub
+# release and push a container image to GHCR.
+#
+# Tag scheme of this community fork:  v<upstream version>-community-Claude-CoI.<n>
+#   - "community" keeps a fork release from being mistaken for an upstream one;
+#   - "Claude-CoI" discloses that the fork's changes were prepared with the
+#     assistance of Claude (Anthropic), an AI model.
+# Tags without both are refused.
+
+on:
+  push:
+    tags: ['v*-community-Claude-CoI.*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to (re)build, e.g. v2.3.2-community-Claude-CoI.1
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  check-tag:
+    name: Tag follows the fork's scheme
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
+    steps:
+      - run: |
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-community-Claude-CoI\.[0-9]+$ ]]; then
+            echo "::error::tag '$TAG' must look like v2.3.2-community-Claude-CoI.1"
+            exit 1
+          fi
+
+  binaries:
+    name: Binary (CUDA ${{ matrix.cuda }})
+    needs: check-tag
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    container: nvidia/cuda:${{ matrix.cuda }}-devel-${{ matrix.os }}
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { flavour: cuda12, makefile: makefile11, cuda: 12.8.1, os: ubuntu24.04 }
+          - { flavour: cuda13, makefile: makefile13, cuda: 13.0.2, os: ubuntu24.04 }
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TAG }}
+
+      - name: Install build dependencies
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            make g++ libtiff-dev
+
+      - name: Build
+        run: |
+          make -C LibSrc/Util
+          make -C LibSrc/Mrcfile
+          make -f ${{ matrix.makefile }} cuda -j"$(nproc)" CUDAHOME=/usr/local/cuda
+          make -f ${{ matrix.makefile }} compile -j"$(nproc)" CUDAHOME=/usr/local/cuda
+          make -f ${{ matrix.makefile }} exe CUDAHOME=/usr/local/cuda
+
+      - name: Package
+        id: pkg
+        run: |
+          name="AreTomo3-${TAG#v}-${{ matrix.flavour }}-linux-x86_64"
+          mkdir "$name"
+          cp AreTomo3 LICENSE.md README.md "$name"/
+          printf 'Built with CUDA %s (%s) on %s\n' \
+            "${{ matrix.cuda }}" "${{ matrix.makefile }}" "${{ matrix.os }}" > "$name/BUILD_INFO.txt"
+          /usr/local/cuda/bin/cuobjdump --list-elf AreTomo3 >> "$name/BUILD_INFO.txt"
+          tar -czf "$name.tar.gz" "$name"
+          sha256sum "$name.tar.gz" > "$name.tar.gz.sha256"
+          echo "file=$name.tar.gz" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: ${{ steps.pkg.outputs.file }}
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.flavour }}
+          path: AreTomo3-*.tar.gz*
+
+  release:
+    name: GitHub release
+    needs: binaries
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ env.TAG }}
+          files: AreTomo3-*
+          generate_release_notes: true
+          body: |
+            **Community build, not an official AreTomo3 release.** Built from the
+            `${{ github.repository }}` fork of czimaginginstitute/AreTomo3, whose authors
+            did not produce or review it.
+
+            **AI disclosure (Claude-CoI).** The fork's changes (build fixes, CI and release
+            tooling) were prepared with the assistance of Claude (Anthropic), an AI model,
+            and released by the fork's maintainer. The AreTomo3 algorithms are upstream's.
+
+            Please cite AreTomo3 as described in `CITATION.cff`.
+
+  container:
+    name: Container image (GHCR)
+    needs: check-tag
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TAG }}
+
+      - name: Image name
+        id: img
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/aretomo3" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/metadata-action@v6
+        id: meta
+        with:
+          images: ${{ steps.img.outputs.name }}
+          tags: |
+            type=raw,value=${{ env.TAG }}
+            type=raw,value=latest,enable=${{ github.event_name == 'push' }}
+
+      - uses: docker/build-push-action@v7
+        id: push
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - uses: actions/attest-build-provenance@v4
+        with:
+          subject-name: ${{ steps.img.outputs.name }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true

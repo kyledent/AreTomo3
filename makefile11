@@ -152,6 +152,7 @@ SRCS = ./MaUtil/CParseArgs.cpp \
 	./MotionCor/MotionDecon/CInFrameMotion.cpp \
 	./MotionCor/MrcUtil/CApplyRefs.cpp \
 	./MotionCor/MrcUtil/CSumFFTStack.cpp \
+	./MotionCor/MrcUtil/CLoadMrcMain.cpp \
 	./MotionCor/TiffUtil/CLoadTiffHeader.cpp \
 	./MotionCor/TiffUtil/CLoadTiffImage.cpp \
 	./MotionCor/TiffUtil/CLoadTiffMain.cpp \
@@ -280,7 +281,7 @@ compile: $(OBJS)
 exe: $(OBJS)
 	@$(NVCC) -g -G -m64 $(OBJS) \
 	$(PRJLIB)/libmrcfile.a $(PRJLIB)/libutil.a \
-	-L$(CUDALIB) -L$(CUDALIB)/stubs\
+	-L$(CUDALIB) -L$(CUDALIB)/stubs \
 	-L/usr/lib64 \
 	-lcufft -lcudart -lcuda -lnvToolsExt -ltiff -lc -lm -lpthread \
 	-o AreTomo3

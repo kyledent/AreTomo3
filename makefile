@@ -11,9 +11,11 @@ CUSRCS = ./MaUtil/GAddFrames.cu \
 	./MaUtil/GCorrLinearInterp.cu \
 	./MaUtil/GFFT1D.cu \
 	./MaUtil/GFFTUtil2D.cu \
+	./MaUtil/GFillEmpty2D.cu \
 	./MaUtil/GFindMinMax2D.cu \
 	./MaUtil/GFourierResize2D.cu \
 	./MaUtil/GFtResize2D.cu \
+	./MaUtil/GGenRandoms.cu \
 	./MaUtil/GNormalize2D.cu \
 	./MaUtil/GPad2D.cu \
 	./MaUtil/GPartialCopy.cu \
@@ -63,6 +65,7 @@ CUSRCS = ./MaUtil/GAddFrames.cu \
 	./AreTomo/CommonLine/GRemoveMean.cu \
 	./AreTomo/CommonLine/GSumLines.cu \
 	./AreTomo/Correct/GCorrPatchShift.cu \
+	./AreTomo/Correct/GRoundProjEdge.cu \
 	./AreTomo/DoseWeight/GDoseWeightImage.cu \
 	./AreTomo/FindCtf/GBackground1D.cu \
 	./AreTomo/FindCtf/GCalcCTF1D.cu \
@@ -149,6 +152,7 @@ SRCS = ./MaUtil/CParseArgs.cpp \
 	./MotionCor/MotionDecon/CInFrameMotion.cpp \
 	./MotionCor/MrcUtil/CApplyRefs.cpp \
 	./MotionCor/MrcUtil/CSumFFTStack.cpp \
+	./MotionCor/MrcUtil/CLoadMrcMain.cpp \
 	./MotionCor/TiffUtil/CLoadTiffHeader.cpp \
 	./MotionCor/TiffUtil/CLoadTiffImage.cpp \
 	./MotionCor/TiffUtil/CLoadTiffMain.cpp \
@@ -273,7 +277,7 @@ compile: $(OBJS)
 exe: $(OBJS)
 	@$(NVCC) -g -G -m64 $(OBJS) \
 	$(PRJLIB)/libmrcfile.a $(PRJLIB)/libutil.a \
-	-L$(CUDALIB) -L$(CUDALIB)/stubs\
+	-L$(CUDALIB) -L$(CUDALIB)/stubs \
 	-L/usr/lib64 \
 	-lcufft -lcudart -lcuda -lnvToolsExt -ltiff -lc -lm -lpthread \
 	-o AreTomo3

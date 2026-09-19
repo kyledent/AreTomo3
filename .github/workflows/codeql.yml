@@ -1,0 +1,51 @@
+name: CodeQL
+
+# Advanced setup. Unlike default setup, this scans pushes to every branch
+# (including develop) and pull requests from forks.
+# NOTE: default setup must be switched off in Settings > Code security
+# before this workflow can upload results.
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '23 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: Analyze (c-cpp)
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    container: nvidia/cuda:12.8.1-devel-ubuntu24.04
+    permissions:
+      security-events: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install build dependencies
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            make g++ libtiff-dev
+
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: c-cpp
+          build-mode: manual
+
+      # One GPU architecture is enough for analysis.
+      - name: Build
+        run: |
+          make -C LibSrc/Util
+          make -C LibSrc/Mrcfile
+          make -f makefile12 cuda compile -j"$(nproc)" CUDAHOME=/usr/local/cuda \
+            CUFLAG="-Xptxas -dlcm=ca -O2 -gencode arch=compute_80,code=sm_80"
+
+      - uses: github/codeql-action/analyze@v4
+        with:
+          category: /language:c-cpp

@@ -8,7 +8,16 @@ AreTomo3 is developed on Linux platform equipped with at least one Nvidia GPU ca
 2.      cd AreTomo3
 3.      make exe -f makefile11 [CUDAHOME=path/cuda-xx.x]
 
-If the compute capability of GPUs is 5.x, use makefile instead. If CUDAHOME is not provided, the default installation path of CUDA given in makefile or makefile11 will be used.
+Choose the makefile that matches your CUDA toolkit and GPUs:
+
+| Makefile     | CUDA toolkit | GPU architectures                   |
+|--------------|--------------|-------------------------------------|
+| `makefile`   | 12           | sm_61 to sm_75                      |
+| `makefile11` | 12           | sm_61 to sm_90                      |
+| `makefile12` | 12           | sm_70 to sm_90                      |
+| `makefile13` | 13           | sm_80 to sm_90, sm_100, sm_120      |
+
+For Blackwell GPUs (RTX 50 series, RTX PRO 6000, B200) use `makefile13` with CUDA 13. If CUDAHOME is not provided, the default installation path of CUDA given in the makefile will be used.
 
 ## Code of Conduct
 

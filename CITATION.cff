@@ -1,0 +1,58 @@
+cff-version: 1.2.0
+message: "If you use AreTomo3, please cite the article below."
+title: AreTomo3
+type: software
+license: BSD-3-Clause
+repository-code: "https://github.com/czimaginginstitute/AreTomo3"
+authors:
+  - family-names: Zheng
+    given-names: Shawn
+preferred-citation:
+  type: article
+  title: "AreTomoLive: automated reconstruction of comprehensively corrected and denoised cryo-electron tomograms in real time and at high throughput"
+  journal: Nature Methods
+  year: 2026
+  volume: 23
+  issue: 6
+  start: 1121
+  end: 1125
+  doi: 10.1038/s41592-026-03093-y
+  authors:
+    - family-names: Peck
+      given-names: Ariana
+    - family-names: Yu
+      given-names: Yue
+    - family-names: Paraan
+      given-names: Mohammadreza
+    - family-names: Kimanius
+      given-names: Dari
+    - family-names: Ermel
+      given-names: Utz H.
+    - family-names: Hutchings
+      given-names: Joshua
+    - family-names: Schwartz
+      given-names: Jonathan
+    - family-names: Serwas
+      given-names: Daniel
+    - family-names: Siems
+      given-names: Hannah
+    - family-names: Hill
+      given-names: Norbert S.
+    - family-names: Ali
+      given-names: Mallak
+    - family-names: Peukes
+      given-names: Julia
+    - family-names: Greenan
+      given-names: Garrett A.
+    - family-names: Sheu
+      given-names: Shu-Hsien
+    - family-names: Montabana
+      given-names: Elizabeth A.
+    - family-names: Carragher
+      given-names: Bridget
+    - family-names: Potter
+      given-names: Clinton S.
+    - family-names: Agard
+      given-names: David A.
+    - family-names: Zheng
+      given-names: Shawn

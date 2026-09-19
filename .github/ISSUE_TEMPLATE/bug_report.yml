@@ -1,0 +1,54 @@
+name: Bug report
+description: AreTomo3 crashes, stops, or gives a wrong result
+labels: ["bug", "triage"]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: AreTomo3 version
+      description: Output of `AreTomo3 --version`, or the commit you built from.
+    validations:
+      required: true
+  - type: input
+    id: previous
+    attributes:
+      label: Last version that worked
+      description: If an earlier version handles the same data, which one?
+  - type: input
+    id: gpu
+    attributes:
+      label: GPU, driver and CUDA
+      placeholder: e.g. RTX A5000, driver 570.86, CUDA 12.8
+    validations:
+      required: true
+  - type: dropdown
+    id: stage
+    attributes:
+      label: Processing stage
+      multiple: true
+      options:
+        - Motion correction
+        - Tilt-series alignment
+        - CTF estimation
+        - Reconstruction
+        - Input/output (MRC, TIFF, EER, mdoc)
+        - Other or not sure
+  - type: textarea
+    id: command
+    attributes:
+      label: Command line
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Log output
+      description: The end of the log, including any error message.
+      render: text

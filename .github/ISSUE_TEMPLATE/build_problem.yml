@@ -1,0 +1,48 @@
+name: Build problem
+description: AreTomo3 does not compile or link
+labels: ["build", "triage"]
+body:
+  - type: dropdown
+    id: makefile
+    attributes:
+      label: Makefile
+      options:
+        - makefile
+        - makefile11
+        - makefile12
+        - makefile13
+    validations:
+      required: true
+  - type: input
+    id: commit
+    attributes:
+      label: Version or commit
+    validations:
+      required: true
+  - type: input
+    id: toolchain
+    attributes:
+      label: CUDA toolkit, gcc and OS
+      placeholder: e.g. CUDA 12.8, gcc 11.4, Ubuntu 22.04
+    validations:
+      required: true
+  - type: input
+    id: gpu
+    attributes:
+      label: Target GPU
+      placeholder: e.g. RTX 5090 (sm_120)
+  - type: textarea
+    id: command
+    attributes:
+      label: Build command
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: error
+    attributes:
+      label: First error in the output
+      description: Paste from the first `error` line, not only the last lines.
+      render: text
+    validations:
+      required: true

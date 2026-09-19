@@ -1,0 +1,18 @@
+# Build products
+*.o
+*.a
+!LibSrc/Lib/*.a
+/AreTomo3
+/AreTomo3_*
+
+# C++ sources that `make cuda` generates from the .cu files.
+# MotionCor/EerUtil/GDecodeEerFrame.cpp is a real source that also matches;
+# it is tracked, so this pattern does not affect it. A NEW hand-written G*.cpp
+# must be added with `git add -f`; CI's makefile check fails if it is missing.
+G*.cpp
+
+# Editor and filesystem temporaries
+*~
+*.swp
+.nfs*
+.DS_Store

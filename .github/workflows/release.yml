@@ -120,10 +120,18 @@ jobs:
             tooling) were prepared with the assistance of Claude (Anthropic), an AI model,
             and released by the fork's maintainer. The AreTomo3 algorithms are upstream's.
 
+            **Containers.** Each release is also published as an OCI image and as an
+            Apptainer SIF, for CUDA 12 and CUDA 13 (the CUDA 13 image needs driver 580+):
+
+                docker pull ghcr.io/${{ github.repository_owner }}/aretomo3:${{ env.TAG }}-cuda13
+                apptainer pull oras://ghcr.io/${{ github.repository_owner }}/aretomo3-sif:${{ env.TAG }}-cuda13
+
+            Provenance: `gh attestation verify <file> -R ${{ github.repository }}`.
+
             Please cite AreTomo3 as described in `CITATION.cff`.
 
   container:
-    name: Container image (GHCR)
+    name: Container image and SIF (${{ matrix.flavour }})
     needs: check-tag
     runs-on: ubuntu-latest
     timeout-minutes: 120
@@ -132,6 +140,12 @@ jobs:
       packages: write
       id-token: write
       attestations: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { flavour: cuda12, makefile: makefile11, cuda: 12.8.1 }
+          - { flavour: cuda13, makefile: makefile13, cuda: 13.0.2 }
     env:
       TAG: ${{ inputs.tag || github.ref_name }}
     steps:
@@ -139,9 +153,15 @@ jobs:
         with:
           ref: ${{ env.TAG }}
 
-      - name: Image name
+      - name: Names
         id: img
-        run: echo "name=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/aretomo3" >> "$GITHUB_OUTPUT"
+        run: |
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          {
+            echo "name=ghcr.io/$owner/aretomo3"
+            echo "sif=ghcr.io/$owner/aretomo3-sif"
+            echo "commit=$(git rev-parse HEAD)"
+          } >> "$GITHUB_OUTPUT"
 
       - uses: docker/setup-buildx-action@v4
 
@@ -156,14 +176,18 @@ jobs:
         with:
           images: ${{ steps.img.outputs.name }}
           tags: |
-            type=raw,value=${{ env.TAG }}
-            type=raw,value=latest,enable=${{ github.event_name == 'push' }}
+            type=raw,value=${{ env.TAG }}-${{ matrix.flavour }}
+            type=raw,value=latest-${{ matrix.flavour }},enable=${{ github.event_name == 'push' }}
 
       - uses: docker/build-push-action@v7
         id: push
         with:
           context: .
           push: true
+          build-args: |
+            CUDA=${{ matrix.cuda }}
+            MAKEFILE=${{ matrix.makefile }}
+            BUILD_COMMIT=${{ steps.img.outputs.commit }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
@@ -172,3 +196,34 @@ jobs:
           subject-name: ${{ steps.img.outputs.name }}
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
+
+      # The SIF is converted from the image just pushed, by digest, so both
+      # formats hold the same software.
+      - name: Install Apptainer
+        run: |
+          sudo add-apt-repository -y ppa:apptainer/ppa
+          sudo apt-get update
+          sudo apt-get install -y apptainer
+
+      - name: Build SIF
+        id: sif
+        env:
+          APPTAINER_DOCKER_USERNAME: ${{ github.actor }}
+          APPTAINER_DOCKER_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          file="aretomo3-${TAG#v}-${{ matrix.flavour }}.sif"
+          apptainer build "$file" "docker://${{ steps.img.outputs.name }}@${{ steps.push.outputs.digest }}"
+          apptainer exec "$file" cat /opt/aretomo3/BUILD_COMMIT
+          echo "file=$file" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: ${{ steps.sif.outputs.file }}
+
+      - name: Push SIF
+        env:
+          PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "$PASSWORD" | apptainer registry login --username "${{ github.actor }}" --password-stdin oras://ghcr.io
+          apptainer push "${{ steps.sif.outputs.file }}" \
+            "oras://${{ steps.img.outputs.sif }}:${TAG}-${{ matrix.flavour }}"

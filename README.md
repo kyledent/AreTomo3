@@ -19,6 +19,16 @@ Choose the makefile that matches your CUDA toolkit and GPUs:
 
 For Blackwell GPUs (RTX 50 series, RTX PRO 6000, B200) use `makefile13` with CUDA 13. If CUDAHOME is not provided, the default installation path of CUDA given in the makefile will be used.
 
+## Containers
+
+Releases of this fork are also published as container images, as an OCI image and as an Apptainer SIF, each for CUDA 12 and CUDA 13 (the CUDA 13 image needs NVIDIA driver 580 or newer):
+
+    docker pull ghcr.io/kyledent/aretomo3:<tag>-cuda12
+    apptainer pull oras://ghcr.io/kyledent/aretomo3-sif:<tag>-cuda12
+    apptainer exec --nv aretomo3-sif_<tag>-cuda12.sif AreTomo3 -InPrefix ...
+
+The images have no entrypoint, so AreTomo3 is run by name; `/opt/aretomo3/BUILD_COMMIT` records the commit they were built from. To build one yourself, see the `Dockerfile`.
+
 ## Code of Conduct
 
 This project adheres to the Contributor Covenant [code of conduct](https://github.com/chanzuckerberg/.github/blob/main/CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to [opensource@chanzuckerberg.com](mailto:opensource@chanzuckerberg.com).

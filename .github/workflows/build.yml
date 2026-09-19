@@ -1,0 +1,79 @@
+name: Build
+
+# Compile AreTomo3 with every makefile against the CUDA version it targets.
+# CUDA code compiles without a GPU, so this runs on standard runners inside
+# the nvidia/cuda development images. Nothing is executed on a GPU here.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  makefile-sources:
+    name: Makefile source lists agree
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: python3 .github/scripts/check_makefile_sources.py
+
+  build:
+    name: ${{ matrix.makefile }} / CUDA ${{ matrix.cuda }}
+    needs: makefile-sources
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    container: nvidia/cuda:${{ matrix.cuda }}-devel-${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # makefile: sm_61-sm_75.
+          - { makefile: makefile,   cuda: 12.1.1, os: ubuntu22.04 }
+          # makefile11: the one the README tells people to use.
+          - { makefile: makefile11, cuda: 12.1.1, os: ubuntu22.04 }
+          # makefile11 with a newer toolkit and gcc 13.
+          - { makefile: makefile11, cuda: 12.8.1, os: ubuntu24.04 }
+          - { makefile: makefile12, cuda: 12.4.1, os: ubuntu22.04 }
+          # makefile13: CUDA 13, including Blackwell (sm_100, sm_120).
+          - { makefile: makefile13, cuda: 13.0.2, os: ubuntu24.04 }
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install build dependencies
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            make g++ libtiff-dev file
+
+      # Build the support libraries from LibSrc rather than linking the
+      # prebuilt archives checked into LibSrc/Lib.
+      - name: Build LibSrc libraries
+        run: |
+          make -C LibSrc/Util
+          make -C LibSrc/Mrcfile
+
+      - name: Compile CUDA sources
+        run: make -f ${{ matrix.makefile }} cuda -j"$(nproc)" CUDAHOME=/usr/local/cuda
+
+      - name: Compile and link
+        run: |
+          make -f ${{ matrix.makefile }} compile -j"$(nproc)" CUDAHOME=/usr/local/cuda
+          make -f ${{ matrix.makefile }} exe CUDAHOME=/usr/local/cuda
+          file AreTomo3
+          test -x AreTomo3
+
+      - name: List embedded GPU architectures
+        run: /usr/local/cuda/bin/cuobjdump --list-elf AreTomo3 | sed 's/.*\.\(sm_[0-9]*\)\..*/\1/' | sort | uniq -c
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: AreTomo3-${{ matrix.makefile }}-cuda${{ matrix.cuda }}
+          path: AreTomo3
+          retention-days: 14

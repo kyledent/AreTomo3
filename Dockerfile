@@ -51,4 +51,7 @@ RUN printf '%s\n' "${BUILD_COMMIT}" > /opt/aretomo3/BUILD_COMMIT \
 LABEL org.opencontainers.image.title="AreTomo3" \
       org.opencontainers.image.licenses="BSD-3-Clause" \
       org.opencontainers.image.revision="${BUILD_COMMIT}"
+# The nvidia/cuda base image sets an ENTRYPOINT (a script that prints a banner);
+# clear it so the image runs exactly the command it is given.
+ENTRYPOINT []
 CMD ["AreTomo3", "--version"]

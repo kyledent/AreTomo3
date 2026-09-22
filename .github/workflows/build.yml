@@ -69,8 +69,16 @@ jobs:
           file AreTomo3
           test -x AreTomo3
 
-      - name: List embedded GPU architectures
-        run: /usr/local/cuda/bin/cuobjdump --list-elf AreTomo3 | sed 's/.*\.\(sm_[0-9]*\)\..*/\1/' | sort | uniq -c
+      # SASS for the listed architectures, plus PTX so the binary also runs on
+      # newer GPUs by JIT. Without PTX, a newer GPU fails the kernel launch with
+      # "no kernel image is available"; cudaDeviceSynchronize does NOT report it,
+      # so a program that checks only the sync would carry on with stale data.
+      - name: List embedded GPU architectures and PTX
+        run: |
+          /usr/local/cuda/bin/cuobjdump --list-elf AreTomo3 | sed 's/.*\.\(sm_[0-9]*\)\..*/\1/' | sort | uniq -c
+          ptx=$(/usr/local/cuda/bin/cuobjdump --list-ptx -all AreTomo3 | sed -n 's/.*\.\(sm_[0-9]*\)\.ptx/\1/p' | sort -u | tr '\n' ' ')
+          echo "PTX: ${ptx:-NONE}"
+          test -n "$ptx"
 
       - uses: actions/upload-artifact@v7
         with:

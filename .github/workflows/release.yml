@@ -81,6 +81,7 @@ jobs:
           printf 'Built with CUDA %s (%s) on %s\n' \
             "${{ matrix.cuda }}" "${{ matrix.makefile }}" "${{ matrix.os }}" > "$name/BUILD_INFO.txt"
           /usr/local/cuda/bin/cuobjdump --list-elf AreTomo3 >> "$name/BUILD_INFO.txt"
+          /usr/local/cuda/bin/cuobjdump --list-ptx -all AreTomo3 >> "$name/BUILD_INFO.txt"
           tar -czf "$name.tar.gz" "$name"
           sha256sum "$name.tar.gz" > "$name.tar.gz.sha256"
           echo "file=$name.tar.gz" >> "$GITHUB_OUTPUT"

@@ -266,6 +266,7 @@ CC = g++ -std=c++11
 CFLAG = -c -g -pthread -m64
 NVCC = $(CUDAHOME)/bin/nvcc -std=c++11
 CUFLAG = -Xptxas -dlcm=ca -O2 \
+	-gencode arch=compute_75,code=compute_75 \
 	-gencode arch=compute_75,code=sm_75 \
 	-gencode arch=compute_70,code=sm_70 \
         -gencode arch=compute_61,code=sm_61 

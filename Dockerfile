@@ -31,8 +31,10 @@ RUN make -C LibSrc/Util \
  && make -f ${MAKEFILE} cuda -j"$(nproc)" CUDAHOME=/usr/local/cuda \
  && make -f ${MAKEFILE} compile -j"$(nproc)" CUDAHOME=/usr/local/cuda \
  && make -f ${MAKEFILE} exe CUDAHOME=/usr/local/cuda \
- && /usr/local/cuda/bin/cuobjdump --list-elf AreTomo3 \
-      | sed -n 's/.*\.\(sm_[0-9]*\)\..*/\1/p' | sort -u > /src/ARCHITECTURES
+ && { /usr/local/cuda/bin/cuobjdump --list-elf AreTomo3 \
+        | sed -n 's/.*\.\(sm_[0-9]*\)\..*/\1/p' | sort -u | sed 's/^/SASS /'; \
+      /usr/local/cuda/bin/cuobjdump --list-ptx -all AreTomo3 \
+        | sed -n 's/.*\.\(sm_[0-9]*\)\.ptx/\1/p' | sort -u | sed 's/^/PTX  /'; } > /src/ARCHITECTURES
 
 FROM nvidia/cuda:${CUDA}-runtime-${UBUNTU}
 ARG CUDA

@@ -17,7 +17,9 @@ Choose the makefile that matches your CUDA toolkit and GPUs:
 | `makefile12` | 12           | sm_70 to sm_90                      |
 | `makefile13` | 13           | sm_80 to sm_90, sm_100, sm_120      |
 
-For Blackwell GPUs (RTX 50 series, RTX PRO 6000, B200) use `makefile13` with CUDA 13. If CUDAHOME is not provided, the default installation path of CUDA given in the makefile will be used.
+Every makefile also embeds PTX for its highest architecture, so a binary still runs on a GPU newer than any it has compiled code for: the driver compiles the PTX on the first run, which makes that run slower (the result is cached under `~/.nv/ComputeCache`). For Blackwell GPUs (RTX 50 series, RTX PRO 6000, B200), `makefile13` with CUDA 13 gives compiled code; the CUDA 12 builds reach them only through PTX.
+
+If CUDAHOME is not provided, the default installation path of CUDA given in the makefile will be used.
 
 ## Containers
 
